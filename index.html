@@ -327,67 +327,67 @@
 
         // Render Commish Panel Controls for Logo & Color Uploads
         function renderCommishTab() {
-            const container = document.getElementById('commishGamesContainer');
-            if (!container) return;
+    const container = document.getElementById('commishGamesContainer');
+    if (!container) return;
 
-            if (state.games.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-500">No games selected for the slate yet. Select games from the ESPN list above.</p>`;
-                return;
-            }
+    if (state.games.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500">No games selected for the slate yet. Select games from the ESPN list above.</p>`;
+        return;
+    }
 
-            container.innerHTML = state.games.map((game, index) => `
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div class="font-bold text-sm text-slate-300">Game ${index + 1}: ${game.awayTeam} @ ${game.homeTeam}</div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        
-                        <!-- Away Team Settings -->
-                        <div class="space-y-2 bg-slate-800/40 p-3 rounded-lg text-xs">
-                            <label class="font-bold text-slate-300 block">${game.awayTeam}</label>
-                            
-                            <div class="flex items-center gap-2">
-                                <span>BG Color:</span>
-                                <input type="color" value="${game.awayColor || '#1e293b'}" 
-                                       onchange="updateGameColor('${game.id}', 'awayColor', this.value)" 
-                                       class="w-6 h-6 rounded bg-transparent border-0 cursor-pointer">
-                            </div>
+    container.innerHTML = state.games.map((game, index) => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+            <!-- Game Header with Remove Button -->
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <div class="font-bold text-sm text-slate-300">Game ${index + 1}: ${game.awayTeam} @ ${game.homeTeam}</div>
+                <button onclick="removeGameFromSlate('${game.id}')" 
+                        class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-2.5 py-1 rounded transition">
+                    ✕ Remove Game
+                </button>
+            </div>
 
-                            <div>
-                                <label class="block text-slate-400 mb-1">Upload Custom Logo:</label>
-                                <input type="file" accept="image/*" onchange="uploadTeamLogo('${game.id}', 'awayLogo', this)" class="block w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-slate-200">
-                            </div>
-
-                            <div>
-                                <label class="block text-slate-400 mb-1">Or Logo URL:</label>
-                                <input type="text" value="${game.awayLogo || ''}" onchange="updateGameLogoUrl('${game.id}', 'awayLogo', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-200">
-                            </div>
-                        </div>
-
-                        <!-- Home Team Settings -->
-                        <div class="space-y-2 bg-slate-800/40 p-3 rounded-lg text-xs">
-                            <label class="font-bold text-slate-300 block">${game.homeTeam}</label>
-                            
-                            <div class="flex items-center gap-2">
-                                <span>BG Color:</span>
-                                <input type="color" value="${game.homeColor || '#1e293b'}" 
-                                       onchange="updateGameColor('${game.id}', 'homeColor', this.value)" 
-                                       class="w-6 h-6 rounded bg-transparent border-0 cursor-pointer">
-                            </div>
-
-                            <div>
-                                <label class="block text-slate-400 mb-1">Upload Custom Logo:</label>
-                                <input type="file" accept="image/*" onchange="uploadTeamLogo('${game.id}', 'homeLogo', this)" class="block w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-slate-200">
-                            </div>
-
-                            <div>
-                                <label class="block text-slate-400 mb-1">Or Logo URL:</label>
-                                <input type="text" value="${game.homeLogo || ''}" onchange="updateGameLogoUrl('${game.id}', 'homeLogo', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-200">
-                            </div>
-                        </div>
-
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Away Team Settings -->
+                <div class="space-y-2 bg-slate-800/40 p-3 rounded-lg text-xs">
+                    <label class="font-bold text-slate-300 block">${game.awayTeam}</label>
+                    <div class="flex items-center gap-2">
+                        <span>BG Color:</span>
+                        <input type="color" value="${game.awayColor || '#1e293b'}" 
+                               onchange="updateGameColor('${game.id}', 'awayColor', this.value)" 
+                               class="w-6 h-6 rounded bg-transparent border-0 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Upload Custom Logo:</label>
+                        <input type="file" accept="image/*" onchange="uploadTeamLogo('${game.id}', 'awayLogo', this)" class="block w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Or Logo URL:</label>
+                        <input type="text" value="${game.awayLogo || ''}" onchange="updateGameLogoUrl('${game.id}', 'awayLogo', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-200">
                     </div>
                 </div>
-            `).join('');
-        }
+
+                <!-- Home Team Settings -->
+                <div class="space-y-2 bg-slate-800/40 p-3 rounded-lg text-xs">
+                    <label class="font-bold text-slate-300 block">${game.homeTeam}</label>
+                    <div class="flex items-center gap-2">
+                        <span>BG Color:</span>
+                        <input type="color" value="${game.homeColor || '#1e293b'}" 
+                               onchange="updateGameColor('${game.id}', 'homeColor', this.value)" 
+                               class="w-6 h-6 rounded bg-transparent border-0 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Upload Custom Logo:</label>
+                        <input type="file" accept="image/*" onchange="uploadTeamLogo('${game.id}', 'homeLogo', this)" class="block w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Or Logo URL:</label>
+                        <input type="text" value="${game.homeLogo || ''}" onchange="updateGameLogoUrl('${game.id}', 'homeLogo', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-200">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
 
         // Upload Logo Image (Converts to Base64)
         function uploadTeamLogo(gameId, logoField, input) {
