@@ -770,14 +770,15 @@ async function saveCommishGames() {
             if (!state.firebaseConfig || !state.firebaseConfig.apiKey) return;
 
             try {
-                const { initializeApp, getFirestore, collection, onSnapshot } = window.FirebaseModule;
+                // Added 'doc' to the destructured imports below:
+                const { initializeApp, getFirestore, collection, doc, onSnapshot } = window.FirebaseModule;
                 const app = initializeApp(state.firebaseConfig);
                 state.db = getFirestore(app);
 
                 document.getElementById('syncText').innerText = "Connected to Firebase Firestore Live Cloud";
                 document.getElementById('syncStatusBanner').classList.replace('bg-slate-800', 'bg-emerald-900/40');
 
-                // Listen for real-time picks updates
+                // 1. Listen for real-time picks updates
                 onSnapshot(collection(state.db, "picks"), (snapshot) => {
                     snapshot.forEach(doc => {
                         const playerName = doc.id;
@@ -790,6 +791,21 @@ async function saveCommishGames() {
                     renderMatrixTab();
                     renderLeaderboardTab();
                 });
+
+                // 2. Listen for real-time shared slate & custom logo updates
+                onSnapshot(doc(state.db, "settings", "currentSlate"), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.games) {
+                            state.games = data.games;
+                            renderPicksTab();
+                            renderMatrixTab();
+                            renderLeaderboardTab();
+                            renderCommishTab();
+                        }
+                    }
+                });
+
             } catch (e) {
                 console.error("Firebase init failed:", e);
             }
