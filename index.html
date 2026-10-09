@@ -11,7 +11,7 @@
     <!-- Firebase JS SDK (v10.8.0) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         window.FirebaseModule = {
             initializeApp,
@@ -19,8 +19,7 @@
             doc,
             setDoc,
             onSnapshot,
-            collection,
-            getDocs
+            collection
         };
     </script>
     <style>
@@ -95,7 +94,7 @@
                     <h2 class="text-xl font-bold text-white flex items-center gap-2">
                         <span>Week <span id="currentWeekNum">1</span> Picks</span>
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Pick 10 games against the spread. Save when finished.</p>
+                    <p class="text-xs text-slate-400 mt-1">Pick your teams against the spread. Save when finished.</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <span id="pickCounter" class="px-3 py-1 bg-slate-700 text-orange-400 font-bold rounded-lg text-sm border border-slate-600">0 / 10 Selected</span>
@@ -141,26 +140,38 @@
 
         <!-- TAB 4: COMMISH PANEL -->
         <section id="sec-commish" class="hidden space-y-6">
+
+            <!-- SELECT GAME FROM LIVE LIST SECTION -->
+            <div class="bg-slate-800 p-5 rounded-xl border border-orange-500/40 shadow-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-orange-400 flex items-center gap-2">
+                        <i data-lucide="list-plus" class="w-5 h-5"></i> Pick & Add Games from Live ESPN Schedule
+                    </h3>
+                    <button onclick="loadESPNGameList()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh ESPN List
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400">Select any college football game from this week's slate below, then click **"Add Selected Game"** to populate it with live spreads and logos automatically.</p>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <select id="espnGameDropdown" class="bg-slate-900 border border-slate-700 text-white text-sm p-2.5 rounded-lg flex-grow focus:outline-none focus:border-orange-500">
+                        <option value="">-- Click 'Refresh' to load live games --</option>
+                    </select>
+                    <button onclick="addSelectedGameFromDropdown()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2 whitespace-nowrap">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Selected Game
+                    </button>
+                </div>
+            </div>
+
             <!-- Firebase Config Box -->
             <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-orange-400 flex items-center gap-2">
-                        <i data-lucide="database" class="w-5 h-5"></i> Firebase Cloud Sync
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="database" class="w-5 h-5 text-orange-500"></i> Firebase Cloud Sync
                     </h3>
                     <button onclick="toggleFirebaseConfigModal()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-slate-200">Configure Keys</button>
                 </div>
                 <p class="text-xs text-slate-400">Connect to Firebase Firestore so all players can submit picks online in real time.</p>
-            </div>
-
-            <!-- Live Odds Fetcher Box -->
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
-                <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i data-lucide="rss" class="w-5 h-5 text-orange-500"></i> Fetch Live ESPN College Football Lines
-                </h3>
-                <p class="text-xs text-slate-400">Pull current FBS games, betting spreads, and high-resolution team logos directly from ESPN's public API.</p>
-                <button onclick="fetchESPNLines()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm transition">
-                    <i data-lucide="download" class="w-4 h-4"></i> Sync ESPN Games & Lines
-                </button>
             </div>
 
             <!-- Player Management Box -->
@@ -177,13 +188,13 @@
                 </div>
             </div>
 
-            <!-- Manual Game Slate Editor Box -->
+            <!-- Manual / Selected Game Slate Editor Box -->
             <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="edit-3" class="w-5 h-5 text-orange-500"></i> Manage Game Slate & Scores
+                        <i data-lucide="edit-3" class="w-5 h-5 text-orange-500"></i> Active Weekly Slate
                     </h3>
-                    <button onclick="addNewGameRow()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
+                    <button onclick="addNewBlankGameRow()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
                         <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Custom Game
                     </button>
                 </div>
@@ -194,7 +205,7 @@
 
                 <div class="pt-4 flex justify-end">
                     <button onclick="saveCommishGames()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-6 rounded-lg text-sm shadow-lg flex items-center gap-2">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i> Save Slate & Resolve Results
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Save Slate & Publish
                     </button>
                 </div>
             </div>
@@ -237,9 +248,10 @@
     <script>
         // Global App State
         let state = {
-            currentUser: "Nick",
-            players: ["Nick", "Alex", "Sam", "Chris", "Jordan"],
+            currentUser: "Johnson",
+            players: ["Johnson", "Thomas", "Ribas", "Ghion",
             currentWeek: 1,
+            availableEspnGames: [], // fetched list from ESPN
             games: [
                 {
                     id: "g1",
@@ -262,39 +274,6 @@
                     favScore: null,
                     undScore: null,
                     status: "Upcoming"
-                },
-                {
-                    id: "g3",
-                    favorite: "Texas",
-                    favoriteLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
-                    underdog: "Oklahoma",
-                    underdogLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png",
-                    spread: -4.5,
-                    favScore: null,
-                    undScore: null,
-                    status: "Upcoming"
-                },
-                {
-                    id: "g4",
-                    favorite: "Oregon",
-                    favoriteLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
-                    underdog: "Washington",
-                    underdogLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png",
-                    spread: -6.5,
-                    favScore: null,
-                    undScore: null,
-                    status: "Upcoming"
-                },
-                {
-                    id: "g5",
-                    favorite: "LSU",
-                    favoriteLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png",
-                    underdog: "Ole Miss",
-                    underdogLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png",
-                    spread: -2.5,
-                    favScore: null,
-                    undScore: null,
-                    status: "Upcoming"
                 }
             ],
             userPicks: {}, // { playerName: { gameId: "favorite" | "underdog" } }
@@ -310,6 +289,7 @@
             renderMatrixTab();
             renderLeaderboardTab();
             renderCommishTab();
+            loadESPNGameList(); // Auto load dropdown options
             lucide.createIcons();
             tryInitFirebase();
         });
@@ -365,12 +345,11 @@
             renderPicksTab();
         }
 
-        // TAB 1: RENDER PICKS TAB (64px Logos + Centered Text Below)
+        // TAB 1: RENDER PICKS TAB (64px Logos + Centered Text)
         function renderPicksTab() {
             const grid = document.getElementById('picksMatchupGrid');
             const currentUserPicks = state.userPicks[state.currentUser] || {};
             
-            // Count selections
             const pickCount = Object.keys(currentUserPicks).length;
             document.getElementById('pickCounter').innerText = `${pickCount} / ${state.games.length} Selected`;
 
@@ -422,7 +401,7 @@
                         picks: state.userPicks[state.currentUser] || {},
                         updatedAt: new Date().toISOString()
                     });
-                    alert(`Picks saved successfully for ${state.currentUser}! synced to Cloud Firestore.`);
+                    alert(`Picks saved for ${state.currentUser}! Synced to cloud.`);
                 } catch (e) {
                     alert(`Picks saved locally! (Firebase sync error: ${e.message})`);
                 }
@@ -449,7 +428,6 @@
 
             let bodyHTML = state.games.map(g => {
                 const favCovered = (g.favScore !== null && g.undScore !== null) ? ((g.favScore + g.spread) > g.undScore) : null;
-                const undCovered = (g.favScore !== null && g.undScore !== null) ? ((g.undScore) > (g.favScore + g.spread)) : null;
 
                 return `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
@@ -471,9 +449,9 @@
 
                             let statusBg = 'bg-slate-700/50 text-slate-300';
                             if (pick === 'favorite' && favCovered === true) statusBg = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-                            if (pick === 'underdog' && undCovered === true) statusBg = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                            if (pick === 'underdog' && favCovered === false) statusBg = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
                             if (pick === 'favorite' && favCovered === false) statusBg = 'bg-red-500/20 text-red-400 border border-red-500/40';
-                            if (pick === 'underdog' && undCovered === false) statusBg = 'bg-red-500/20 text-red-400 border border-red-500/40';
+                            if (pick === 'underdog' && favCovered === true) statusBg = 'bg-red-500/20 text-red-400 border border-red-500/40';
 
                             return `
                                 <td class="p-2 text-center">
@@ -495,7 +473,6 @@
         function renderLeaderboardTab() {
             const container = document.getElementById('leaderboardList');
             
-            // Calculate scores
             const standings = state.players.map(player => {
                 let wins = 0;
                 let losses = 0;
@@ -516,7 +493,7 @@
                     }
                 });
 
-                return { player, wins, losses, pending, totalPoints: wins };
+                return { player, wins, losses, pending };
             }).sort((a, b) => b.wins - a.wins);
 
             container.innerHTML = standings.map((s, rank) => `
@@ -547,17 +524,16 @@
                 </span>
             `).join('');
 
-            // Render Game Editor
+            // Render Active Games List
             const gamesList = document.getElementById('commishGamesList');
             gamesList.innerHTML = state.games.map((g, idx) => `
                 <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl space-y-3">
                     <div class="flex justify-between items-center text-xs font-bold text-slate-400">
                         <span>Game #${idx + 1} Editor</span>
-                        <button onclick="removeGame('${g.id}')" class="text-red-400 hover:text-red-300">Remove</button>
+                        <button onclick="removeGame('${g.id}')" class="text-red-400 hover:text-red-300">Remove Game</button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <!-- Favorite Config -->
                         <div class="space-y-1">
                             <label class="text-slate-400">Favorite Team Name</label>
                             <input id="favName_${g.id}" type="text" value="${g.favorite}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
@@ -565,7 +541,6 @@
                             <input id="favLogo_${g.id}" type="text" value="${g.favoriteLogo}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
                         </div>
 
-                        <!-- Underdog Config -->
                         <div class="space-y-1">
                             <label class="text-slate-400">Underdog Team Name</label>
                             <input id="undName_${g.id}" type="text" value="${g.underdog}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
@@ -592,46 +567,70 @@
             `).join('');
         }
 
-        // ESPN API Fetcher
-        async function fetchESPNLines() {
+        // ESPN GAME DROPDOWN LOGIC
+        async function loadESPNGameList() {
+            const dropdown = document.getElementById('espnGameDropdown');
+            dropdown.innerHTML = `<option value="">Loading live schedule from ESPN...</option>`;
+
             try {
                 const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
                 const data = await res.json();
 
-                if (!data.events) {
-                    alert('No live events returned from ESPN.');
+                if (!data.events || data.events.length === 0) {
+                    dropdown.innerHTML = `<option value="">No live games found from ESPN</option>`;
                     return;
                 }
 
-                const newGames = data.events.slice(0, 10).map((ev, idx) => {
-                    const competition = ev.competitions[0];
-                    const home = competition.competitors.find(c => c.homeAway === 'home');
-                    const away = competition.competitors.find(c => c.homeAway === 'away');
-
-                    const odds = competition.odds ? competition.odds[0] : null;
-                    const spreadVal = odds ? parseFloat(odds.spread) : -3.5;
+                state.availableEspnGames = data.events.map(ev => {
+                    const comp = ev.competitions[0];
+                    const home = comp.competitors.find(c => c.homeAway === 'home');
+                    const away = comp.competitors.find(c => c.homeAway === 'away');
+                    const odds = comp.odds ? comp.odds[0] : null;
 
                     return {
-                        id: `espn_${ev.id}`,
+                        id: 'espn_' + ev.id,
                         favorite: home.team.location || home.team.name,
                         favoriteLogo: home.team.logo || 'https://via.placeholder.com/64',
                         underdog: away.team.location || away.team.name,
                         underdogLogo: away.team.logo || 'https://via.placeholder.com/64',
-                        spread: spreadVal,
+                        spread: odds ? parseFloat(odds.spread) : -3.5,
                         favScore: home.score ? parseInt(home.score) : null,
                         undScore: away.score ? parseInt(away.score) : null,
-                        status: ev.status.type.shortDetail || 'Upcoming'
+                        status: ev.status.type.shortDetail || 'Upcoming',
+                        displayText: `${home.team.location || home.team.name} vs ${away.team.location || away.team.name} (${odds ? odds.details : 'Spread N/A'})`
                     };
                 });
 
-                state.games = newGames;
-                saveLocalData();
-                renderPicksTab();
-                renderCommishTab();
-                alert('Successfully synced live ESPN games and high-res team logos!');
+                dropdown.innerHTML = `<option value="">-- Choose a game from the list (${state.availableEspnGames.length} available) --</option>` +
+                    state.availableEspnGames.map((g, idx) => `<option value="${idx}">${g.displayText}</option>`).join('');
+
             } catch (e) {
-                alert('Error fetching ESPN lines: ' + e.message);
+                dropdown.innerHTML = `<option value="">Error loading games: ${e.message}</option>`;
             }
+        }
+
+        function addSelectedGameFromDropdown() {
+            const dropdown = document.getElementById('espnGameDropdown');
+            const selectedIdx = dropdown.value;
+
+            if (selectedIdx === "") {
+                alert("Please select a game from the list first!");
+                return;
+            }
+
+            const gameObj = state.availableEspnGames[selectedIdx];
+            
+            // Avoid duplicates
+            if (state.games.some(g => g.id === gameObj.id)) {
+                alert("This game is already in your active slate!");
+                return;
+            }
+
+            state.games.push({...gameObj});
+            saveLocalData();
+            renderPicksTab();
+            renderCommishTab();
+            alert(`Added ${gameObj.favorite} vs ${gameObj.underdog} to your slate!`);
         }
 
         function addPlayer() {
@@ -657,7 +656,7 @@
             renderMatrixTab();
         }
 
-        function addNewGameRow() {
+        function addNewBlankGameRow() {
             state.games.push({
                 id: 'custom_' + Date.now(),
                 favorite: 'Team A',
@@ -700,7 +699,7 @@
             renderPicksTab();
             renderMatrixTab();
             renderLeaderboardTab();
-            alert('Game slate & results updated!');
+            alert('Active weekly slate & results published!');
         }
 
         // Firebase Sync Engine
