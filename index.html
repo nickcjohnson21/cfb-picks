@@ -710,27 +710,42 @@
             renderMatrixTab();
         }
 
-        function saveCommishGames() {
-            state.games.forEach(g => {
-                const favN = document.getElementById(`favName_${g.id}`);
-                const undN = document.getElementById(`undName_${g.id}`);
-                const spr = document.getElementById(`spread_${g.id}`);
-                const favS = document.getElementById(`favScore_${g.id}`);
-                const undS = document.getElementById(`undScore_${g.id}`);
+async function saveCommishGames() {
+    state.games.forEach(g => {
+        const favN = document.getElementById(`favName_${g.id}`);
+        const undN = document.getElementById(`undName_${g.id}`);
+        const spr = document.getElementById(`spread_${g.id}`);
+        const favS = document.getElementById(`favScore_${g.id}`);
+        const undS = document.getElementById(`undScore_${g.id}`);
 
-                if (favN) g.favorite = favN.value;
-                if (undN) g.underdog = undN.value;
-                if (spr) g.spread = parseFloat(spr.value) || 0;
-                if (favS) g.favScore = favS.value !== '' ? parseInt(favS.value) : null;
-                if (undS) g.undScore = undS.value !== '' ? parseInt(undS.value) : null;
+        if (favN) g.favorite = favN.value;
+        if (undN) g.underdog = undN.value;
+        if (spr) g.spread = parseFloat(spr.value) || 0;
+        if (favS) g.favScore = favS.value !== '' ? parseInt(favS.value) : null;
+        if (undS) g.undScore = undS.value !== '' ? parseInt(undS.value) : null;
+    });
+
+    saveLocalData();
+
+    // Sync active games and logos to Firebase so everyone sees the same slate
+    if (state.db) {
+        try {
+            const { setDoc, doc } = window.FirebaseModule;
+            await setDoc(doc(state.db, "settings", "currentSlate"), {
+                games: state.games,
+                players: state.players,
+                updatedAt: new Date().toISOString()
             });
-
-            saveLocalData();
-            renderPicksTab();
-            renderMatrixTab();
-            renderLeaderboardTab();
-            alert('Active weekly slate & results published!');
+        } catch (e) {
+            console.error("Error syncing slate to Firebase:", e);
         }
+    }
+
+    renderPicksTab();
+    renderMatrixTab();
+    renderLeaderboardTab();
+    alert('Active weekly slate & results published and synced to cloud!');
+}
 
         // Firebase Sync Engine
         function toggleFirebaseConfigModal() {
