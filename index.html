@@ -115,8 +115,21 @@
             <div id="commishGamesContainer" class="space-y-4">
                 <!-- Commish game customization editors rendered here -->
             </div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Commissioner Controls</h2>
+                <div class="flex gap-2">
+                    <button onclick="fetchEspnAvailableGames()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition">
+                        Fetch Live ESPN Games
+                    </button>
+                    <button onclick="clearEntireSlate()" class="bg-red-600 hover:bg-red-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition">
+                        Clear Slate
+                    </button>
+                    <button onclick="saveSlateToFirebase()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition">
+                        Publish Slate to Group
+                    </button>
+                </div>
+            </div>
         </section>
-
     </main>
 
     <!-- Firebase Modular SDK -->
@@ -233,6 +246,23 @@
                 renderEspnAvailableList();
             } catch (error) {
                 console.error("Failed to fetch ESPN available games:", error);
+            }
+        }
+        // Remove a single game from the active slate
+        function removeGameFromSlate(gameId) {
+            state.games = state.games.filter(g => g.id !== gameId && g.espnId !== gameId);
+            renderEspnAvailableList();
+            renderPicksTab();
+            renderCommishTab();
+        }
+        
+        // Clear all selected games at once
+        function clearEntireSlate() {
+            if (confirm("Are you sure you want to clear all selected games from the slate?")) {
+                state.games = [];
+                renderEspnAvailableList();
+                renderPicksTab();
+                renderCommishTab();
             }
         }
 
