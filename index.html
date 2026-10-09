@@ -248,8 +248,8 @@
     <script>
         // Global App State
         let state = {
-            currentUser: "Nick",
-            players: ["Nick", "Alex", "Sam", "Chris", "Jordan"],
+            currentUser: "Johnson",
+            players: ["Johnson", "Ribas", "Ghion", "Thomas"],
             currentWeek: 1,
             availableEspnGames: [], // fetched list from ESPN
             games: [
@@ -277,7 +277,15 @@
                 }
             ],
             userPicks: {}, // { playerName: { gameId: "favorite" | "underdog" } }
-            firebaseConfig: null,
+            firebaseConfig : {
+  apiKey: "AIzaSyBekrCi57PztHjlNVbUNhXu8QUUvT4rfSw",
+  authDomain: "cfb-picks-36f24.firebaseapp.com",
+  projectId: "cfb-picks-36f24",
+  storageBucket: "cfb-picks-36f24.firebasestorage.app",
+  messagingSenderId: "295757838105",
+  appId: "1:295757838105:web:557a50db4ca173f36b3788",
+  measurementId: "G-8DR4Q8N3E5"
+};
             db: null
         };
 
