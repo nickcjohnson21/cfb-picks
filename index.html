@@ -245,12 +245,12 @@
     <script>
         // TODO: Replace with your actual Firebase project configuration
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyBekrCi57PztHjlNVbUNhXu8QUUvT4rfSw",
+            authDomain: "cfb-picks-36f24.firebaseapp.com",
+            projectId: "cfb-picks-36f24",
+            storageBucket: "cfb-picks-36f24.firebasestorage.app",
+            messagingSenderId: "295757838105",
+            appId: "1:295757838105:web:557a50db4ca173f36b3788"
         };
 
         // Initialize Firebase
@@ -492,25 +492,45 @@
             }
 
             let html = `<p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Currently Saved 10 Games for Week ${currentWeek}:</p>`;
-            html += `<div class="space-y-2">`;
+            html += `<div class="space-y-3">`;
             selectedWeekGames.forEach((game, idx) => {
                 html += `
-                    <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <div class="flex items-center gap-3">
+                    <div class="flex flex-col sm:flex-row items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 gap-3">
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
                             <span class="text-xs font-bold px-2 py-1 bg-slate-800 text-slate-300 rounded">#${idx + 1}</span>
                             <div>
                                 <div class="text-sm font-bold text-white">${game.awayTeam} @ ${game.homeTeam}</div>
                                 <div class="text-xs text-slate-400">Spread: <span class="text-emerald-400 font-semibold">${game.spread}</span></div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <input type="text" placeholder="Custom Logo URL (optional)" value="${game.homeLogo || ''}" onchange="updateCustomLogo('${game.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white w-48">
+                        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-400">Home Logo:</span>
+                                <img src="${game.homeLogo || ''}" class="w-6 h-6 object-contain bg-slate-900 rounded p-0.5" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22><rect width=%2224%22 height=%2224%22 fill=%22%231e293b%22/></svg>'">
+                                <input type="file" accept="image/png, image/jpeg" onchange="handleLogoUpload('${game.id}', event)" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer w-48">
+                            </div>
                         </div>
                     </div>
                 `;
             });
             html += `</div>`;
             container.innerHTML = html;
+        }
+
+        function handleLogoUpload(gameId, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+                const base64String = uploadEvent.target.result;
+                const game = selectedWeekGames.find(g => g.id === gameId);
+                if (game) {
+                    game.homeLogo = base64String;
+                    renderAdminSelectedGames(); // Refresh the admin list to show preview
+                }
+            };
+            reader.readAsDataURL(file);
         }
 
         function updateCustomLogo(gameId, url) {
