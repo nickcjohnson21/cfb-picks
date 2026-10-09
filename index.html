@@ -94,10 +94,10 @@
                     <h2 class="text-xl font-bold text-white flex items-center gap-2">
                         <span>Week <span id="currentWeekNum">1</span> Picks</span>
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Pick your teams against the spread. Games ordered chronologically by kickoff time.</p>
+                    <p class="text-xs text-slate-400 mt-1">Home team on left. Games sorted chronologically by kickoff time.</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span id="pickCounter" class="px-3 py-1 bg-slate-700 text-orange-400 font-bold rounded-lg text-sm border border-slate-600">0 / 10 Selected</span>
+                    <span id="pickCounter" class="px-3 py-1 bg-slate-700 text-orange-400 font-bold rounded-lg text-sm border border-slate-600">0 / 0 Selected</span>
                     <button onclick="saveUserPicks()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-5 rounded-lg shadow-lg flex items-center gap-2 transition">
                         <i data-lucide="save" class="w-4 h-4"></i> Save Picks
                     </button>
@@ -115,7 +115,7 @@
             <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
                 <div>
                     <h2 class="text-xl font-bold text-white">Group Pick Matrix</h2>
-                    <p class="text-xs text-slate-400">Compare everyone's picks side by side for the week in order of kickoff.</p>
+                    <p class="text-xs text-slate-400">Compare picks side-by-side in chronological kickoff order.</p>
                 </div>
             </div>
 
@@ -151,7 +151,7 @@
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh ESPN List
                     </button>
                 </div>
-                <p class="text-xs text-slate-400">Games are listed chronologically by kickoff time. Select a game to auto-fill teams, 64px logos, lines, and game times.</p>
+                <p class="text-xs text-slate-400">Games are ordered chronologically by kickoff time with Home teams listed first on the left.</p>
 
                 <div class="flex flex-col sm:flex-row gap-3">
                     <select id="espnGameDropdown" class="bg-slate-900 border border-slate-700 text-white text-sm p-2.5 rounded-lg flex-grow focus:outline-none focus:border-orange-500">
@@ -248,37 +248,39 @@
     <script>
         // Global App State
         let state = {
-            currentUser: "Nick",
-            players: ["Nick", "Alex", "Sam", "Chris", "Jordan"],
+            currentUser: "Johnson",
+            players: ["Johnson", "Ribas", "Ghion", "Thomas"],
             currentWeek: 1,
             availableEspnGames: [], // fetched list from ESPN
             games: [
                 {
                     id: "g1",
-                    favorite: "Georgia",
-                    favoriteLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
-                    underdog: "Alabama",
-                    underdogLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
-                    spread: -3.5,
-                    favScore: null,
-                    undScore: null,
-                    status: "Sat, 3:30 PM",
+                    homeTeam: "Georgia",
+                    homeLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+                    homeSpread: -3.5,
+                    awayTeam: "Alabama",
+                    awayLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+                    awaySpread: 3.5,
+                    homeScore: null,
+                    awayScore: null,
+                    status: "Sat, 3:30 PM EDT",
                     kickoffTime: "2026-10-10T19:30:00Z"
                 },
                 {
                     id: "g2",
-                    favorite: "Ohio State",
-                    favoriteLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
-                    underdog: "Michigan",
-                    underdogLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png",
-                    spread: -7.0,
-                    favScore: null,
-                    undScore: null,
-                    status: "Sat, 7:30 PM",
+                    homeTeam: "Ohio State",
+                    homeLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+                    homeSpread: -7.0,
+                    awayTeam: "Michigan",
+                    awayLogo: "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png",
+                    awaySpread: 7.0,
+                    homeScore: null,
+                    awayScore: null,
+                    status: "Sat, 7:30 PM EDT",
                     kickoffTime: "2026-10-10T23:30:00Z"
                 }
             ],
-            userPicks: {}, // { playerName: { gameId: "favorite" | "underdog" } }
+            userPicks: {}, // { playerName: { gameId: "home" | "away" } }
             firebaseConfig: null,
             db: null
         };
@@ -300,14 +302,14 @@
         // Tab Switching Logic
         function switchTab(tabName) {
             ['picks', 'matrix', 'leaderboard', 'commish'].forEach(t => {
-                document.getElementById(`sec-\${t}`).classList.add('hidden');
-                document.getElementById(`tab-\${t}`).classList.remove('active-tab');
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active-tab');
             });
-            document.getElementById(`sec-\${tabName}`).classList.remove('hidden');
-            document.getElementById(`tab-\${tabName}`).classList.add('active-tab');
+            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active-tab');
         }
 
-        // Helper: Sort games array chronologically by kickoff time
+        // Sort active games chronologically by kickoff date/time
         function sortActiveGamesByKickoff() {
             state.games.sort((a, b) => {
                 const timeA = a.kickoffTime ? new Date(a.kickoffTime).getTime() : 0;
@@ -348,7 +350,7 @@
         function renderUserDropdown() {
             const select = document.getElementById('currentUserSelect');
             select.innerHTML = state.players.map(p => 
-                `<option value="\${p}" ${p === state.currentUser ? 'selected' : ''}>${p}</option>`
+                `<option value="${p}" ${p === state.currentUser ? 'selected' : ''}>${p}</option>`
             ).join('');
         }
 
@@ -358,41 +360,54 @@
             renderPicksTab();
         }
 
-        // TAB 1: RENDER PICKS TAB (64px Logos + Centered Text)
+        // Format spread string (+3.5, -3.5, PK)
+        function formatSpread(val) {
+            if (val === 0 || val === null || val === undefined) return "PK";
+            return val > 0 ? `+${val}` : `${val}`;
+        }
+
+        // TAB 1: RENDER PICKS TAB (Home Left, Away Right, @ in Middle)
         function renderPicksTab() {
             sortActiveGamesByKickoff();
             const grid = document.getElementById('picksMatchupGrid');
             const currentUserPicks = state.userPicks[state.currentUser] || {};
             
             const pickCount = Object.keys(currentUserPicks).length;
-            document.getElementById('pickCounter').innerText = `${pickCount} /${state.games.length} Selected`;
+            document.getElementById('pickCounter').innerText = `${pickCount} / ${state.games.length} Selected`;
 
             grid.innerHTML = state.games.map((g, idx) => {
-                const favSelected = currentUserPicks[g.id] === 'favorite';
-                const undSelected = currentUserPicks[g.id] === 'underdog';
+                const homeSelected = currentUserPicks[g.id] === 'home';
+                const awaySelected = currentUserPicks[g.id] === 'away';
 
                 return `
                 <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg space-y-4">
                     <div class="flex justify-between items-center text-xs text-slate-400 border-b border-slate-700/60 pb-2">
-                        <span class="font-bold text-slate-300">Game \${idx + 1}</span>
+                        <span class="font-bold text-slate-300">Game ${idx + 1}</span>
                         <span class="px-2.5 py-0.5 rounded bg-slate-700/80 text-orange-400 font-semibold flex items-center gap-1">
-                            <i data-lucide="clock" class="w-3 h-3"></i> \${g.status || 'Upcoming'}
+                            <i data-lucide="clock" class="w-3 h-3"></i> ${g.status || 'Upcoming'}
                         </span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- Favorite Pick Button -->
-                        <button onclick="selectPick('\${g.id}', 'favorite')" class="flex flex-col items-center justify-center p-4 rounded-xl border-2 transition \${favSelected ? 'bg-orange-500/20 border-orange-500 text-white ring-2 ring-orange-500/50' : 'bg-slate-900/60 border-slate-700/80 hover:border-slate-500 text-slate-300'}">
-                            <img src="${g.favoriteLogo \vert{}\vert{} 'https://via.placeholder.com/64'}" alt="${g.favorite}" class="team-logo-img mb-2 drop-shadow-md" onerror="this.src='https://via.placeholder.com/64?text=\${g.favorite[0]}'">
-                            <span class="font-extrabold text-base text-center leading-tight">\${g.favorite}</span>
-                            <span class="text-xs font-bold text-orange-400 mt-1">${g.spread > 0 ? '+' : ''}${g.spread}</span>
+                    <div class="flex items-center justify-between gap-2">
+                        <!-- HOME TEAM BUTTON (LEFT) -->
+                        <button onclick="selectPick('${g.id}', 'home')" class="flex-1 flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${homeSelected ? 'bg-orange-500/20 border-orange-500 text-white ring-2 ring-orange-500/50' : 'bg-slate-900/60 border-slate-700/80 hover:border-slate-500 text-slate-300'}">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 mb-1">HOME</span>
+                            <img src="${g.homeLogo || 'https://via.placeholder.com/64'}" alt="${g.homeTeam}" class="team-logo-img mb-2 drop-shadow-md" onerror="this.src='https://via.placeholder.com/64?text=${g.homeTeam ? g.homeTeam[0] : 'H'}'">
+                            <span class="font-extrabold text-base text-center leading-tight">${g.homeTeam}</span>
+                            <span class="text-xs font-bold ${g.homeSpread <= 0 ? 'text-orange-400' : 'text-emerald-400'} mt-1">${formatSpread(g.homeSpread)}</span>
                         </button>
 
-                        <!-- Underdog Pick Button -->
-                        <button onclick="selectPick('\${g.id}', 'underdog')" class="flex flex-col items-center justify-center p-4 rounded-xl border-2 transition \${undSelected ? 'bg-orange-500/20 border-orange-500 text-white ring-2 ring-orange-500/50' : 'bg-slate-900/60 border-slate-700/80 hover:border-slate-500 text-slate-300'}">
-                            <img src="${g.underdogLogo \vert{}\vert{} 'https://via.placeholder.com/64'}" alt="${g.underdog}" class="team-logo-img mb-2 drop-shadow-md" onerror="this.src='https://via.placeholder.com/64?text=\${g.underdog[0]}'">
-                            <span class="font-extrabold text-base text-center leading-tight">\${g.underdog}</span>
-                            <span class="text-xs font-bold text-emerald-400 mt-1">+\${Math.abs(g.spread)}</span>
+                        <!-- CENTER @ SYMBOL -->
+                        <div class="flex flex-col items-center justify-center px-1">
+                            <span class="bg-slate-700 border border-slate-600 text-slate-300 text-xs font-black rounded-full w-8 h-8 flex items-center justify-center shadow-md">@</span>
+                        </div>
+
+                        <!-- AWAY TEAM BUTTON (RIGHT) -->
+                        <button onclick="selectPick('${g.id}', 'away')" class="flex-1 flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${awaySelected ? 'bg-orange-500/20 border-orange-500 text-white ring-2 ring-orange-500/50' : 'bg-slate-900/60 border-slate-700/80 hover:border-slate-500 text-slate-300'}">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 mb-1">AWAY</span>
+                            <img src="${g.awayLogo || 'https://via.placeholder.com/64'}" alt="${g.awayTeam}" class="team-logo-img mb-2 drop-shadow-md" onerror="this.src='https://via.placeholder.com/64?text=${g.awayTeam ? g.awayTeam[0] : 'A'}'">
+                            <span class="font-extrabold text-base text-center leading-tight">${g.awayTeam}</span>
+                            <span class="text-xs font-bold ${g.awaySpread <= 0 ? 'text-orange-400' : 'text-emerald-400'} mt-1">${formatSpread(g.awaySpread)}</span>
                         </button>
                     </div>
                 </div>
@@ -418,12 +433,12 @@
                         picks: state.userPicks[state.currentUser] || {},
                         updatedAt: new Date().toISOString()
                     });
-                    alert(`Picks saved for \${state.currentUser}! Synced to cloud.`);
+                    alert(`Picks saved for ${state.currentUser}! Synced to cloud.`);
                 } catch (e) {
-                    alert(`Picks saved locally! (Firebase sync error: \${e.message})`);
+                    alert(`Picks saved locally! (Firebase sync error: ${e.message})`);
                 }
             } else {
-                alert(`Picks saved locally for \${state.currentUser}!`);
+                alert(`Picks saved locally for ${state.currentUser}!`);
             }
             renderMatrixTab();
             renderLeaderboardTab();
@@ -438,45 +453,45 @@
             let headerHTML = `
                 <thead>
                     <tr class="bg-slate-900 border-b border-slate-700 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        <th class="p-3">Matchup</th>
-                        \${players.map(p => `<th class="p-3 text-center ${p === state.currentUser ? 'text-orange-400 font-extrabold' : ''}">${p}</th>`).join('')}
+                        <th class="p-3">Matchup (Home @ Away)</th>
+                        ${players.map(p => `<th class="p-3 text-center ${p === state.currentUser ? 'text-orange-400 font-extrabold' : ''}">${p}</th>`).join('')}
                     </tr>
                 </thead>
             `;
 
             let bodyHTML = state.games.map(g => {
-                const favCovered = (g.favScore !== null && g.undScore !== null) ? ((g.favScore + g.spread) > g.undScore) : null;
+                const homeCovered = (g.homeScore !== null && g.awayScore !== null) ? ((g.homeScore + (g.homeSpread || 0)) > g.awayScore) : null;
 
                 return `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
                         <td class="p-3">
                             <div class="flex items-center gap-2">
-                                <img src="\${g.favoriteLogo}" class="w-6 h-6 object-contain">
-                                <span class="font-semibold text-slate-200 text-xs">${g.favorite} (${g.spread})</span>
-                                <span class="text-slate-500 text-xs">vs</span>
-                                <img src="\${g.underdogLogo}" class="w-6 h-6 object-contain">
-                                <span class="font-semibold text-slate-200 text-xs">\${g.underdog}</span>
+                                <img src="${g.homeLogo}" class="w-5 h-5 object-contain">
+                                <span class="font-bold text-slate-200 text-xs">${g.homeTeam} (${formatSpread(g.homeSpread)})</span>
+                                <span class="text-orange-400 text-xs font-black">@</span>
+                                <img src="${g.awayLogo}" class="w-5 h-5 object-contain">
+                                <span class="font-bold text-slate-200 text-xs">${g.awayTeam}</span>
                             </div>
-                            <span class="text-[10px] text-slate-400 block mt-0.5">\${g.status || ''}</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5">${g.status || ''}</span>
                         </td>
-                        \${players.map(p => {
+                        ${players.map(p => {
                             const pick = (state.userPicks[p] || {})[g.id];
                             if (!pick) return `<td class="p-3 text-center text-slate-600 text-xs">-</td>`;
                             
-                            const teamName = pick === 'favorite' ? g.favorite : g.underdog;
-                            const logo = pick === 'favorite' ? g.favoriteLogo : g.underdogLogo;
+                            const teamName = pick === 'home' ? g.homeTeam : g.awayTeam;
+                            const logo = pick === 'home' ? g.homeLogo : g.awayLogo;
 
                             let statusBg = 'bg-slate-700/50 text-slate-300';
-                            if (pick === 'favorite' && favCovered === true) statusBg = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-                            if (pick === 'underdog' && favCovered === false) statusBg = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
-                            if (pick === 'favorite' && favCovered === false) statusBg = 'bg-red-500/20 text-red-400 border border-red-500/40';
-                            if (pick === 'underdog' && favCovered === true) statusBg = 'bg-red-500/20 text-red-400 border border-red-500/40';
+                            if (pick === 'home' && homeCovered === true) statusBg = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                            if (pick === 'away' && homeCovered === false) statusBg = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                            if (pick === 'home' && homeCovered === false) statusBg = 'bg-red-500/20 text-red-400 border border-red-500/40';
+                            if (pick === 'away' && homeCovered === true) statusBg = 'bg-red-500/20 text-red-400 border border-red-500/40';
 
                             return `
                                 <td class="p-2 text-center">
-                                    <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${statusBg} text-xs font-semibold">
-                                        <img src="${logo}" class="w-4 h-4 object-contain">
-                                        <span>${teamName}</span>
+                                    <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md \${statusBg} text-xs font-semibold">
+                                        <img src="\${logo}" class="w-4 h-4 object-contain">
+                                        <span>\${teamName}</span>
                                     </div>
                                 </td>
                             `;
@@ -485,7 +500,7 @@
                 `;
             }).join('');
 
-            table.innerHTML = headerHTML + `<tbody>\${bodyHTML}</tbody>`;
+            table.innerHTML = headerHTML + `<tbody>${bodyHTML}</tbody>`;
         }
 
         // TAB 3: RENDER LEADERBOARD
@@ -500,9 +515,9 @@
                 const picks = state.userPicks[player] || {};
                 state.games.forEach(g => {
                     const pick = picks[g.id];
-                    if (pick && g.favScore !== null && g.undScore !== null) {
-                        const favCovered = (g.favScore + g.spread) > g.undScore;
-                        if ((pick === 'favorite' && favCovered) || (pick === 'underdog' && !favCovered)) {
+                    if (pick && g.homeScore !== null && g.awayScore !== null) {
+                        const homeCovered = (g.homeScore + (g.homeSpread || 0)) > g.awayScore;
+                        if ((pick === 'home' && homeCovered) || (pick === 'away' && !homeCovered)) {
                             wins++;
                         } else {
                             losses++;
@@ -518,14 +533,14 @@
             container.innerHTML = standings.map((s, rank) => `
                 <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between shadow-lg">
                     <div class="flex items-center gap-4">
-                        <span class="font-extrabold text-lg text-slate-500 w-6">\${rank + 1}</span>
+                        <span class="font-extrabold text-lg text-slate-500 w-6">${rank + 1}</span>
                         <div>
                             <h3 class="font-bold text-white text-base ${s.player === state.currentUser ? 'text-orange-400' : ''}">${s.player}</h3>
-                            <p class="text-xs text-slate-400">\${s.wins} Wins - ${s.losses} Losses (${s.pending} pending)</p>
+                            <p class="text-xs text-slate-400">${s.wins} Wins - ${s.losses} Losses (${s.pending} pending)</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <span class="text-2xl font-black text-orange-400">\${s.wins}</span>
+                        <span class="text-2xl font-black text-orange-400">${s.wins}</span>
                         <span class="text-xs text-slate-400 block">PTS</span>
                     </div>
                 </div>
@@ -540,4 +555,260 @@
             const playerList = document.getElementById('playerList');
             playerList.innerHTML = state.players.map(p => `
                 <span class="bg-slate-700 text-slate-200 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 border border-slate-600">
-                    \${p
+                    ${p}
+                    <button onclick="removePlayer('${p}')" class="text-slate-400 hover:text-red-400 ml-1">×</button>
+                </span>
+            `).join('');
+
+            // Render Active Games List
+            const gamesList = document.getElementById('commishGamesList');
+            gamesList.innerHTML = state.games.map((g, idx) => `
+                <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-400">
+                        <span>Game #${idx + 1} Editor (${g.status || 'Scheduled'})</span>
+                        <button onclick="removeGame('${g.id}')" class="text-red-400 hover:text-red-300">Remove Game</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <!-- HOME TEAM CONFIG -->
+                        <div class="space-y-1 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60">
+                            <span class="font-bold text-orange-400 block">HOME TEAM (LEFT)</span>
+                            <label class="text-slate-400">Team Name</label>
+                            <input id="homeName_${g.id}" type="text" value="${g.homeTeam || ''}" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded">
+                            <label class="text-slate-400 block pt-1">Logo URL / PNG</label>
+                            <input id="homeLogo_${g.id}" type="text" value="${g.homeLogo || ''}" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded">
+                        </div>
+
+                        <!-- AWAY TEAM CONFIG -->
+                        <div class="space-y-1 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60">
+                            <span class="font-bold text-orange-400 block">AWAY TEAM (RIGHT)</span>
+                            <label class="text-slate-400">Team Name</label>
+                            <input id="awayName_${g.id}" type="text" value="${g.awayTeam || ''}" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded">
+                            <label class="text-slate-400 block pt-1">Logo URL / PNG</label>
+                            <input id="awayLogo_${g.id}" type="text" value="${g.awayLogo || ''}" class="w-full bg-slate-900 border border-slate-700 text-white p-2 rounded">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 text-xs pt-2 border-t border-slate-800">
+                        <div>
+                            <label class="text-slate-400 block">Home Spread (e.g. -3.5)</label>
+                            <input id="homeSpread_${g.id}" type="number" step="0.5" value="${g.homeSpread !== undefined ? g.homeSpread : -3.5}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block">Home Score</label>
+                            <input id="homeScore_${g.id}" type="number" value="${g.homeScore !== null ? g.homeScore : ''}" placeholder="Final Score" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block">Away Score</label>
+                            <input id="awayScore_${g.id}" type="number" value="${g.awayScore !== null ? g.awayScore : ''}" placeholder="Final Score" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ESPN GAME DROPDOWN LOGIC (Home Left, Away Right)
+        async function loadESPNGameList() {
+            const dropdown = document.getElementById('espnGameDropdown');
+            dropdown.innerHTML = `<option value="">Loading live schedule from ESPN...</option>`;
+
+            try {
+                const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
+                const data = await res.json();
+
+                if (!data.events || data.events.length === 0) {
+                    dropdown.innerHTML = `<option value="">No live games found from ESPN</option>`;
+                    return;
+                }
+
+                // Parse and sort ESPN games chronologically
+                let gamesList = data.events.map(ev => {
+                    const comp = ev.competitions[0];
+                    const home = comp.competitors.find(c => c.homeAway === 'home');
+                    const away = comp.competitors.find(c => c.homeAway === 'away');
+                    const odds = comp.odds ? comp.odds[0] : null;
+
+                    let homeSpreadVal = -3.5;
+                    if (odds && odds.spread !== undefined) {
+                        homeSpreadVal = parseFloat(odds.spread);
+                    }
+
+                    // Format date time
+                    const gameDate = new Date(ev.date);
+                    const formattedDateStr = gameDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }) + ', ' + 
+                                           gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+                    return {
+                        id: 'espn_' + ev.id,
+                        homeTeam: home.team.location || home.team.name,
+                        homeLogo: home.team.logo || 'https://via.placeholder.com/64',
+                        homeSpread: homeSpreadVal,
+                        awayTeam: away.team.location || away.team.name,
+                        awayLogo: away.team.logo || 'https://via.placeholder.com/64',
+                        awaySpread: -homeSpreadVal,
+                        homeScore: home.score ? parseInt(home.score) : null,
+                        awayScore: away.score ? parseInt(away.score) : null,
+                        status: formattedDateStr,
+                        kickoffTime: ev.date,
+                        displayText: `${formattedDateStr} | ${home.team.location || home.team.name} (H) @ ${away.team.location || away.team.name} (A) [${odds ? odds.details : 'Spread N/A'}]`
+                    };
+                });
+
+                gamesList.sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime());
+                state.availableEspnGames = gamesList;
+
+                dropdown.innerHTML = `<option value="">-- Choose a game from the list (${state.availableEspnGames.length} available) --</option>` +
+                    state.availableEspnGames.map((g, idx) => `<option value="${idx}">${g.displayText}</option>`).join('');
+
+            } catch (e) {
+                dropdown.innerHTML = `<option value="">Error loading games: ${e.message}</option>`;
+            }
+        }
+
+        function addSelectedGameFromDropdown() {
+            const dropdown = document.getElementById('espnGameDropdown');
+            const selectedIdx = dropdown.value;
+
+            if (selectedIdx === "") {
+                alert("Please select a game from the list first!");
+                return;
+            }
+
+            const gameObj = state.availableEspnGames[selectedIdx];
+            
+            if (state.games.some(g => g.id === gameObj.id)) {
+                alert("This game is already in your active slate!");
+                return;
+            }
+
+            state.games.push({...gameObj});
+            saveLocalData();
+            renderPicksTab();
+            renderCommishTab();
+            alert(`Added ${gameObj.homeTeam} @ ${gameObj.awayTeam} to your active slate!`);
+        }
+
+        function addPlayer() {
+            const input = document.getElementById('newPlayerInput');
+            const val = input.value.trim();
+            if (val && !state.players.includes(val)) {
+                state.players.push(val);
+                input.value = '';
+                saveLocalData();
+                renderUserDropdown();
+                renderCommishTab();
+                renderMatrixTab();
+            }
+        }
+
+        function removePlayer(name) {
+            if (state.players.length <= 1) return alert('Must have at least 1 player');
+            state.players = state.players.filter(p => p !== name);
+            if (state.currentUser === name) state.currentUser = state.players[0];
+            saveLocalData();
+            renderUserDropdown();
+            renderCommishTab();
+            renderMatrixTab();
+        }
+
+        function addNewBlankGameRow() {
+            state.games.push({
+                id: 'custom_' + Date.now(),
+                homeTeam: 'Home Team',
+                homeLogo: 'https://via.placeholder.com/64',
+                homeSpread: -3.5,
+                awayTeam: 'Away Team',
+                awayLogo: 'https://via.placeholder.com/64',
+                awaySpread: 3.5,
+                homeScore: null,
+                awayScore: null,
+                status: 'Upcoming',
+                kickoffTime: new Date().toISOString()
+            });
+            renderCommishTab();
+        }
+
+        function removeGame(id) {
+            state.games = state.games.filter(g => g.id !== id);
+            renderCommishTab();
+        }
+
+        function saveCommishGames() {
+            state.games.forEach(g => {
+                const homeN = document.getElementById(`homeName_${g.id}`);
+                const homeL = document.getElementById(`homeLogo_${g.id}`);
+                const awayN = document.getElementById(`awayName_${g.id}`);
+                const awayL = document.getElementById(`awayLogo_${g.id}`);
+                const spr = document.getElementById(`homeSpread_${g.id}`);
+                const homeS = document.getElementById(`homeScore_${g.id}`);
+                const awayS = document.getElementById(`awayScore_${g.id}`);
+
+                if (homeN) g.homeTeam = homeN.value;
+                if (homeL) g.homeLogo = homeL.value;
+                if (awayN) g.awayTeam = awayN.value;
+                if (awayL) g.awayLogo = awayL.value;
+                if (spr) {
+                    g.homeSpread = parseFloat(spr.value) || 0;
+                    g.awaySpread = -g.homeSpread;
+                }
+                if (homeS) g.homeScore = homeS.value !== '' ? parseInt(homeS.value) : null;
+                if (awayS) g.awayScore = awayS.value !== '' ? parseInt(awayS.value) : null;
+            });
+
+            saveLocalData();
+            renderPicksTab();
+            renderMatrixTab();
+            renderLeaderboardTab();
+            alert('Active weekly slate & results published!');
+        }
+
+        // Firebase Sync Engine
+        function toggleFirebaseConfigModal() {
+            document.getElementById('firebaseModal').classList.toggle('hidden');
+        }
+
+        function saveFirebaseConfig() {
+            const config = {
+                apiKey: document.getElementById('fbApiKey').value.trim(),
+                authDomain: document.getElementById('fbAuthDomain').value.trim(),
+                projectId: document.getElementById('fbProjectId').value.trim(),
+                appId: document.getElementById('fbAppId').value.trim()
+            };
+
+            state.firebaseConfig = config;
+            saveLocalData();
+            toggleFirebaseConfigModal();
+            tryInitFirebase();
+        }
+
+        function tryInitFirebase() {
+            if (!state.firebaseConfig || !state.firebaseConfig.apiKey) return;
+
+            try {
+                const { initializeApp, getFirestore, collection, onSnapshot } = window.FirebaseModule;
+                const app = initializeApp(state.firebaseConfig);
+                state.db = getFirestore(app);
+
+                document.getElementById('syncText').innerText = "Connected to Firebase Firestore Live Cloud";
+                document.getElementById('syncStatusBanner').classList.replace('bg-slate-800', 'bg-emerald-900/40');
+
+                // Listen for real-time picks updates
+                onSnapshot(collection(state.db, "picks"), (snapshot) => {
+                    snapshot.forEach(doc => {
+                        const playerName = doc.id;
+                        const data = doc.data();
+                        if (data && data.picks) {
+                            state.userPicks[playerName] = data.picks;
+                        }
+                    });
+                    renderPicksTab();
+                    renderMatrixTab();
+                    renderLeaderboardTab();
+                });
+            } catch (e) {
+                console.error("Firebase init failed:", e);
+            }
+        }
+    </script>
+</body>
+</html>
