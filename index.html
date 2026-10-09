@@ -247,11 +247,11 @@
     <!-- App Logic Script -->
     <script>
         // Global App State
-        let state = {
+let state = {
             currentUser: "Johnson",
-            players: ["Johnson", "Ribas", "Ghion", "Thomas"],
+            players: ["Johnson", "Ghion", "Ribas", "Thomas"],
             currentWeek: 1,
-            availableEspnGames: [], // fetched list from ESPN
+            availableEspnGames: [],
             games: [
                 {
                     id: "g1",
@@ -276,16 +276,16 @@
                     status: "Upcoming"
                 }
             ],
-            userPicks: {}, // { playerName: { gameId: "favorite" | "underdog" } }
-            firebaseConfig : {
-  apiKey: "AIzaSyBekrCi57PztHjlNVbUNhXu8QUUvT4rfSw",
-  authDomain: "cfb-picks-36f24.firebaseapp.com",
-  projectId: "cfb-picks-36f24",
-  storageBucket: "cfb-picks-36f24.firebasestorage.app",
-  messagingSenderId: "295757838105",
-  appId: "1:295757838105:web:557a50db4ca173f36b3788",
-  measurementId: "G-8DR4Q8N3E5"
-};
+            userPicks: {},
+            firebaseConfig: {
+                apiKey: "AIzaSyBekrCi57PztHjlNVbUNhXu8QUUvT4rfSw",
+                authDomain: "cfb-picks-36f24.firebaseapp.com",
+                projectId: "cfb-picks-36f24",
+                storageBucket: "cfb-picks-36f24.firebasestorage.app",
+                messagingSenderId: "295757838105",
+                appId: "1:295757838105:web:557a50db4ca173f36b3788",
+                measurementId: "G-8DR4Q8N3E5"
+            },
             db: null
         };
 
