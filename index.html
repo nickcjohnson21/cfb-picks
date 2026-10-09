@@ -151,7 +151,7 @@
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh ESPN List
                     </button>
                 </div>
-                <p class="text-xs text-slate-400">Select any college football game from this week's slate below, then click **"Add Selected Game"** to populate it with live spreads and logos automatically.</p>
+                <p class="text-xs text-slate-400">Select any college football game from this week's slate below, then click <strong>"Add Selected Game"</strong> to populate it with live spreads and logos automatically.</p>
 
                 <div class="flex flex-col sm:flex-row gap-3">
                     <select id="espnGameDropdown" class="bg-slate-900 border border-slate-700 text-white text-sm p-2.5 rounded-lg flex-grow focus:outline-none focus:border-orange-500">
@@ -524,7 +524,7 @@
                 </span>
             `).join('');
 
-            // Render Active Games List
+            // Render Active Games List with file upload support
             const gamesList = document.getElementById('commishGamesList');
             gamesList.innerHTML = state.games.map((g, idx) => `
                 <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl space-y-3">
@@ -533,19 +533,27 @@
                         <button onclick="removeGame('${g.id}')" class="text-red-400 hover:text-red-300">Remove Game</button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <!-- Favorite Team & Upload -->
                         <div class="space-y-1">
-                            <label class="text-slate-400">Favorite Team Name</label>
+                            <label class="text-slate-400 font-semibold">Favorite Team Name</label>
                             <input id="favName_${g.id}" type="text" value="${g.favorite}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
-                            <label class="text-slate-400 block pt-1">Favorite Logo URL</label>
-                            <input id="favLogo_${g.id}" type="text" value="${g.favoriteLogo}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
+                            <label class="text-slate-400 block pt-1 font-semibold">Favorite Logo (Upload PNG)</label>
+                            <div class="flex items-center gap-3 bg-slate-800 border border-slate-700 p-2 rounded">
+                                <img src="${g.favoriteLogo || ''}" class="w-8 h-8 object-contain bg-slate-900 rounded p-1 border border-slate-700" alt="">
+                                <input type="file" accept="image/png, image/jpeg" onchange="handleLogoUpload('${g.id}', 'favorite', event)" class="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600 cursor-pointer">
+                            </div>
                         </div>
 
+                        <!-- Underdog Team & Upload -->
                         <div class="space-y-1">
-                            <label class="text-slate-400">Underdog Team Name</label>
+                            <label class="text-slate-400 font-semibold">Underdog Team Name</label>
                             <input id="undName_${g.id}" type="text" value="${g.underdog}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
-                            <label class="text-slate-400 block pt-1">Underdog Logo URL</label>
-                            <input id="undLogo_${g.id}" type="text" value="${g.underdogLogo}" class="w-full bg-slate-800 border border-slate-700 text-white p-2 rounded">
+                            <label class="text-slate-400 block pt-1 font-semibold">Underdog Logo (Upload PNG)</label>
+                            <div class="flex items-center gap-3 bg-slate-800 border border-slate-700 p-2 rounded">
+                                <img src="${g.underdogLogo || ''}" class="w-8 h-8 object-contain bg-slate-900 rounded p-1 border border-slate-700" alt="">
+                                <input type="file" accept="image/png, image/jpeg" onchange="handleLogoUpload('${g.id}', 'underdog', event)" class="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-600 cursor-pointer">
+                            </div>
                         </div>
                     </div>
 
@@ -565,6 +573,30 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        // Handle direct logo file upload
+        function handleLogoUpload(gameId, type, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+                const base64String = uploadEvent.target.result;
+                const game = state.games.find(g => g.id === gameId);
+                if (game) {
+                    if (type === 'favorite') {
+                        game.favoriteLogo = base64String;
+                    } else {
+                        game.underdogLogo = base64String;
+                    }
+                    saveLocalData();
+                    renderCommishTab();
+                    renderPicksTab();
+                    renderMatrixTab();
+                }
+            };
+            reader.readAsDataURL(file);
         }
 
         // ESPN GAME DROPDOWN LOGIC
@@ -620,7 +652,6 @@
 
             const gameObj = state.availableEspnGames[selectedIdx];
             
-            // Avoid duplicates
             if (state.games.some(g => g.id === gameObj.id)) {
                 alert("This game is already in your active slate!");
                 return;
@@ -630,6 +661,7 @@
             saveLocalData();
             renderPicksTab();
             renderCommishTab();
+            renderMatrixTab();
             alert(`Added ${gameObj.favorite} vs ${gameObj.underdog} to your slate!`);
         }
 
@@ -674,22 +706,20 @@
         function removeGame(id) {
             state.games = state.games.filter(g => g.id !== id);
             renderCommishTab();
+            renderPicksTab();
+            renderMatrixTab();
         }
 
         function saveCommishGames() {
             state.games.forEach(g => {
                 const favN = document.getElementById(`favName_${g.id}`);
-                const favL = document.getElementById(`favLogo_${g.id}`);
                 const undN = document.getElementById(`undName_${g.id}`);
-                const undL = document.getElementById(`undLogo_${g.id}`);
                 const spr = document.getElementById(`spread_${g.id}`);
                 const favS = document.getElementById(`favScore_${g.id}`);
                 const undS = document.getElementById(`undScore_${g.id}`);
 
                 if (favN) g.favorite = favN.value;
-                if (favL) g.favoriteLogo = favL.value;
                 if (undN) g.underdog = undN.value;
-                if (undL) g.underdogLogo = undL.value;
                 if (spr) g.spread = parseFloat(spr.value) || 0;
                 if (favS) g.favScore = favS.value !== '' ? parseInt(favS.value) : null;
                 if (undS) g.undScore = undS.value !== '' ? parseInt(undS.value) : null;
